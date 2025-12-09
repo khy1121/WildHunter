@@ -68,6 +68,9 @@ export interface WeaponDef {
   evolvesTo?: WeaponId;
   requiresPassive?: PassiveId;
   color: string;
+  // Visuals
+  icon?: string;
+  visualType?: 'SLASH' | 'PROJECTILE' | 'SPIN' | 'AURA' | 'ZONE';
 }
 
 export interface PassiveDef {
