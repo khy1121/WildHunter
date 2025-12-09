@@ -1,4 +1,3 @@
-
 import { CharacterDef, CharacterType, EnemyDef, PassiveDef, PassiveId, WeaponDef, WeaponId, GlobalUpgrade, UpgradeId, MapDef, MapId } from "./types";
 
 export const CANVAS_WIDTH = 800;
@@ -76,6 +75,7 @@ export const MAPS: Record<MapId, MapDef> = {
 interface VisualWeaponDef extends WeaponDef {
   visualType?: 'SLASH' | 'PROJECTILE' | 'SPIN' | 'AURA' | 'ZONE';
   visualAsset?: string;
+  icon?: string;
 }
 
 export const EVOLUTION_WEAPON_IDS = [
@@ -102,7 +102,8 @@ export const WEAPONS: Record<WeaponId, VisualWeaponDef> = {
     color: '#f43f5e', // Vibrant Pink-Red
     evolvesTo: WeaponId.BLOODY_TEAR,
     requiresPassive: PassiveId.HOLLOW_HEART,
-    visualType: 'SLASH'
+    visualType: 'SLASH',
+    icon: '⚔️'
   },
   [WeaponId.BLOODY_TEAR]: {
     id: WeaponId.BLOODY_TEAR,
@@ -118,7 +119,8 @@ export const WEAPONS: Record<WeaponId, VisualWeaponDef> = {
     knockback: 25,
     pierce: -1,
     color: '#be123c', // Deep Crimson
-    visualType: 'SLASH'
+    visualType: 'SLASH',
+    icon: '🩸'
   },
   [WeaponId.MAGIC_WAND]: {
     id: WeaponId.MAGIC_WAND,
@@ -136,7 +138,8 @@ export const WEAPONS: Record<WeaponId, VisualWeaponDef> = {
     color: '#60a5fa',
     evolvesTo: WeaponId.HOLY_WAND,
     requiresPassive: PassiveId.EMPTY_TOME,
-    visualType: 'PROJECTILE'
+    visualType: 'PROJECTILE',
+    icon: '🪄'
   },
   [WeaponId.HOLY_WAND]: {
     id: WeaponId.HOLY_WAND,
@@ -152,7 +155,8 @@ export const WEAPONS: Record<WeaponId, VisualWeaponDef> = {
     knockback: 10,
     pierce: 1,
     color: '#1d4ed8',
-    visualType: 'PROJECTILE'
+    visualType: 'PROJECTILE',
+    icon: '🌟'
   },
   [WeaponId.AXE]: {
     id: WeaponId.AXE,
@@ -170,7 +174,8 @@ export const WEAPONS: Record<WeaponId, VisualWeaponDef> = {
     color: '#eab308',
     evolvesTo: WeaponId.DEATH_SPIRAL,
     requiresPassive: PassiveId.CANDELABRADOR,
-    visualType: 'SPIN'
+    visualType: 'SPIN',
+    icon: '🪓'
   },
   [WeaponId.DEATH_SPIRAL]: {
     id: WeaponId.DEATH_SPIRAL,
@@ -186,7 +191,8 @@ export const WEAPONS: Record<WeaponId, VisualWeaponDef> = {
     knockback: 12,
     pierce: -1,
     color: '#a16207',
-    visualType: 'SPIN'
+    visualType: 'SPIN',
+    icon: '🕸️'
   },
   [WeaponId.KNIFE]: {
     id: WeaponId.KNIFE,
@@ -204,7 +210,8 @@ export const WEAPONS: Record<WeaponId, VisualWeaponDef> = {
     color: '#cbd5e1',
     evolvesTo: WeaponId.THOUSAND_EDGE,
     requiresPassive: PassiveId.BRACER,
-    visualType: 'SPIN'
+    visualType: 'SPIN',
+    icon: '🗡️'
   },
   [WeaponId.THOUSAND_EDGE]: {
     id: WeaponId.THOUSAND_EDGE,
@@ -220,7 +227,8 @@ export const WEAPONS: Record<WeaponId, VisualWeaponDef> = {
     knockback: 5,
     pierce: 3,
     color: '#475569',
-    visualType: 'PROJECTILE'
+    visualType: 'PROJECTILE',
+    icon: '🔱'
   },
   [WeaponId.GARLIC]: {
     id: WeaponId.GARLIC,
@@ -236,7 +244,8 @@ export const WEAPONS: Record<WeaponId, VisualWeaponDef> = {
     knockback: 4,
     pierce: -1,
     color: '#fb7185',
-    visualType: 'AURA'
+    visualType: 'AURA',
+    icon: '🧄'
   },
   [WeaponId.HOLY_WATER]: {
     id: WeaponId.HOLY_WATER,
@@ -252,7 +261,8 @@ export const WEAPONS: Record<WeaponId, VisualWeaponDef> = {
     knockback: 0,
     pierce: -1,
     color: '#38bdf8',
-    visualType: 'ZONE'
+    visualType: 'ZONE',
+    icon: '💧'
   },
 };
 
@@ -260,7 +270,19 @@ export const PASSIVES: Record<PassiveId, PassiveDef> = {
   [PassiveId.SPINACH]: { id: PassiveId.SPINACH, name: '시금치', description: '공격력이 10% 증가합니다.', statModifier: { might: 0.1 } },
   [PassiveId.EMPTY_TOME]: { id: PassiveId.EMPTY_TOME, name: '빈 책', description: '무기 쿨타임이 8% 감소합니다.', statModifier: { cooldown: 0.08 } },
   [PassiveId.CANDELABRADOR]: { id: PassiveId.CANDELABRADOR, name: '촛대', description: '공격 범위가 10% 증가합니다.', statModifier: { area: 0.1 } },
-  [PassiveId.BRACER]: { id: PassiveId.BRACER, name: '팔 보호대', description: '투사체 속도가 10% 증가합니다.', statModifier: {} },
-  [PassiveId.SPELLBINDER]: { id: PassiveId.SPELLBINDER, name: '주문속박기', description: '무기 지속시간이 10% 증가합니다.', statModifier: {} },
+  [PassiveId.BRACER]: { id: PassiveId.BRACER, name: '팔 보호대', description: '투사체 속도가 10% 증가합니다.', statModifier: { } },
+  [PassiveId.SPELLBINDER]: { id: PassiveId.SPELLBINDER, name: '주문속박기', description: '무기 지속시간이 10% 증가합니다.', statModifier: { } },
   [PassiveId.HOLLOW_HEART]: { id: PassiveId.HOLLOW_HEART, name: '검은 심장', description: '최대 체력이 20% 증가합니다.', statModifier: { maxHp: 20 } },
 };
+
+export const ENEMIES: EnemyDef[] = [
+  { id: 'BAT', name: '박쥐', hp: 10, damage: 5, speed: 1.2, xpValue: 1, color: '#a1a1aa', radius: 10, spriteType: 'BAT' },
+  { id: 'SKELETON', name: '스켈레톤', hp: 20, damage: 8, speed: 1.0, xpValue: 2, color: '#e5e7eb', radius: 12, spriteType: 'SKELETON' },
+  { id: 'GHOST', name: '유령', hp: 15, damage: 6, speed: 0.8, xpValue: 2, color: '#a7f3d0', radius: 12, spriteType: 'GHOST' },
+  { id: 'BOSS', name: '보스', hp: 500, damage: 20, speed: 1.4, xpValue: 100, color: '#7f1d1d', radius: 30, spriteType: 'BOSS' },
+];
+
+export const SHOP_UPGRADES: GlobalUpgrade[] = [
+  { id: UpgradeId.MIGHT, name: '공격력 강화', description: '모든 캐릭터의 공격력이 5% 증가합니다.', cost: 100, costScaling: 1.5, maxLevel: 5, statModifier: { might: 0.05 } },
+  { id: UpgradeId.ARMOR, name: '체력 강화', description: '모든 캐릭터의 최대 체력이 10 증가합니다.', cost: 80, costScaling: 1.5, maxLevel: 5, statModifier: { maxHp: 10 } },
+];

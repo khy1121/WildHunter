@@ -1,7 +1,6 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { GameEngine } from './game/GameLoop';
-import { CANVAS_WIDTH, CANVAS_HEIGHT, CHARACTERS, SHOP_UPGRADES, MAPS } from './constants';
+import { CANVAS_WIDTH, CANVAS_HEIGHT, CHARACTERS, SHOP_UPGRADES, MAPS, EVOLUTION_WEAPON_IDS, WEAPONS } from './constants';
 import { CharacterType, GameState, WeaponDef, PassiveDef, UserSaveData, UpgradeId, MapId } from './types';
 
 // Screens
@@ -30,11 +29,14 @@ export default function App() {
   // Game State
   const [gameState, setGameState] = useState<GameState | null>(null);
   const [showLevelUp, setShowLevelUp] = useState(false);
-  const [upgradeChoices, setUpgradeChoices] = useState<any[]>([]); // Changed type to any[] to support special items like COIN_BAG
+  const [upgradeChoices, setUpgradeChoices] = useState<any[]>([]); 
   const [gameOverStats, setGameOverStats] = useState<GameState | null>(null);
   const [character, setCharacter] = useState<CharacterType | null>(null);
   const [selectedMap, setSelectedMap] = useState<MapId | null>(null);
   const [isPauseMenuOpen, setIsPauseMenuOpen] = useState(false);
+
+  // Evolution State
+  const [evolvedItem, setEvolvedItem] = useState<WeaponDef | null>(null);
 
   // Settings
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -75,10 +77,9 @@ export default function App() {
         },
         (finalStats: GameState) => {
             setGameOverStats(finalStats);
-            // Update coins persistent
             const newSave = {
                 ...saveData,
-                coins: finalStats.totalCoins // Engine updates this
+                coins: finalStats.totalCoins 
             };
             updateSave(newSave);
         },
@@ -92,13 +93,14 @@ export default function App() {
       setIsPauseMenuOpen(false);
       setShowLevelUp(false);
       setGameOverStats(null);
+      setEvolvedItem(null);
 
       return () => engine.stop();
     }
   }, [screen, character, selectedMap]);
 
   const handleTouchStart = (e: React.TouchEvent | React.MouseEvent) => {
-    if (screen !== Screen.GAME || showLevelUp || gameOverStats || isPauseMenuOpen) return;
+    if (screen !== Screen.GAME || showLevelUp || gameOverStats || isPauseMenuOpen || evolvedItem) return;
     const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
     setJoystickOrigin({ x: clientX, y: clientY });
@@ -122,8 +124,6 @@ export default function App() {
     const jy = Math.sin(angle) * limitedDist;
 
     setJoystickPos({ x: jx, y: jy });
-    
-    // Send normalized vector to engine
     engineRef.current.setJoystick(jx / maxDist, jy / maxDist);
   };
 
@@ -133,16 +133,63 @@ export default function App() {
     if (engineRef.current) engineRef.current.setJoystick(0, 0);
   };
 
-  const selectUpgrade = (item: any) => { // Changed type to any
+  const playEvolutionFanfare = () => {
+    if (!soundEnabled || !window.AudioContext) return;
+    try {
+        const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+        
+        const playNote = (freq: number, start: number, dur: number, type: OscillatorType = 'square') => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
+            gain.gain.setValueAtTime(0.1, ctx.currentTime + start);
+            gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + start + dur);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(ctx.currentTime + start);
+            osc.stop(ctx.currentTime + start + dur);
+        }
+
+        // Victory Fanfare
+        playNote(523.25, 0.0, 0.15); // C5
+        playNote(523.25, 0.15, 0.15); // C5
+        playNote(523.25, 0.3, 0.15); // C5
+        playNote(659.25, 0.45, 0.3); // E5
+        playNote(783.99, 0.75, 0.3); // G5
+        playNote(1046.50, 1.05, 1.5, 'triangle'); // C6
+    } catch(e) {
+        console.error("Audio play failed", e);
+    }
+  }
+
+  const selectUpgrade = (item: any) => { 
     if (item.id === 'COIN_BAG') {
-         // handle coin bag mock
          engineRef.current!.state.totalCoins += 50;
+         setShowLevelUp(false);
+         engineRef.current!.state.isPaused = false;
     } else if (item.id === 'POTION') {
         engineRef.current!.state.hp = engineRef.current!.state.maxHp;
+        setShowLevelUp(false);
+        engineRef.current!.state.isPaused = false;
     } else {
+        const isEvolution = EVOLUTION_WEAPON_IDS.includes(item.id);
+        
         engineRef.current?.applyUpgrade(item);
+        setShowLevelUp(false);
+        
+        if (isEvolution) {
+            // Keep game paused for animation
+            if (engineRef.current) engineRef.current.state.isPaused = true;
+            setEvolvedItem(item);
+            playEvolutionFanfare();
+            
+            setTimeout(() => {
+                setEvolvedItem(null);
+                if (engineRef.current) engineRef.current.state.isPaused = false;
+            }, 3500); // 3.5s animation duration
+        }
     }
-    setShowLevelUp(false);
   };
 
   const buyGlobalUpgrade = (up: typeof SHOP_UPGRADES[0]) => {
@@ -160,13 +207,12 @@ export default function App() {
 
   // --- Menu Actions ---
   const togglePause = () => {
-      if (!engineRef.current || showLevelUp || gameOverStats) return;
+      if (!engineRef.current || showLevelUp || gameOverStats || evolvedItem) return;
       
       const nextState = !isPauseMenuOpen;
       setIsPauseMenuOpen(nextState);
       engineRef.current.state.isPaused = nextState;
       
-      // Reset inputs when pausing
       if (nextState) {
           setJoystickOrigin(null);
           setJoystickPos({ x: 0, y: 0 });
@@ -175,7 +221,6 @@ export default function App() {
   };
 
   const quitGame = () => {
-      // Force stop engine updates locally before unmount cleanup
       if (engineRef.current) engineRef.current.state.isPaused = true;
       setScreen(Screen.MAIN);
       setGameState(null);
@@ -213,7 +258,6 @@ export default function App() {
               className="p-6 bg-zinc-800 border-2 border-zinc-700 hover:border-red-500 hover:bg-zinc-750 rounded-lg flex flex-col items-center transition-all group relative overflow-hidden"
             >
               <div className="w-16 h-16 mb-4 rounded shadow-lg transform group-hover:scale-110 transition-transform flex items-center justify-center" style={{ backgroundColor: char.color }}>
-                  {/* Sprite Preview */}
                   <div className="w-8 h-8 bg-black/20 rounded-full"></div> 
               </div>
               <span className="font-bold text-xl mb-1">{char.name}</span>
@@ -329,7 +373,6 @@ export default function App() {
   if (screen === Screen.SHOP) return renderShop();
   if (screen === Screen.SETTINGS) return renderSettings();
 
-  // --- GAME HUD ---
   return (
     <div 
       className="fixed inset-0 bg-black overflow-hidden touch-none select-none"
@@ -394,14 +437,17 @@ export default function App() {
         </div>
       </div>
 
-      {/* Weapon Slots (Bottom) */}
+      {/* Weapon Slots */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 pointer-events-none opacity-80">
-          {gameState && Object.entries(gameState.weapons).map(([id, lvl]) => (
-              <div key={id} className="w-8 h-8 bg-zinc-900 border border-zinc-600 flex items-center justify-center relative">
-                  <div className="w-6 h-6 rounded-sm" style={{ backgroundColor: 'white' }}></div>
-                  <span className="absolute bottom-0 right-0 bg-black text-[8px] px-1 text-white">{lvl}</span>
-              </div>
-          ))}
+          {gameState && Object.entries(gameState.weapons).map(([id, lvl]) => {
+              const def = WEAPONS[id as any] || {};
+              return (
+                  <div key={id} className="w-8 h-8 bg-zinc-900 border border-zinc-600 flex items-center justify-center relative">
+                      <div className="text-lg leading-none">{def.icon || '⚔️'}</div>
+                      <span className="absolute bottom-0 right-0 bg-black text-[8px] px-1 text-white">{lvl}</span>
+                  </div>
+              )
+          })}
       </div>
 
       {/* Joystick Visual */}
@@ -462,8 +508,34 @@ export default function App() {
         </div>
       )}
 
+      {/* Evolution Overlay */}
+      {evolvedItem && (
+        <div className="absolute inset-0 bg-black/95 flex flex-col items-center justify-center z-[60] animate-in fade-in duration-700 pointer-events-none">
+            {/* Rotating Light Rays */}
+            <div className="absolute inset-0 flex items-center justify-center opacity-30">
+                <div className="w-[800px] h-[800px] bg-[conic-gradient(from_0deg,transparent_0deg,gold_20deg,transparent_40deg,gold_60deg,transparent_80deg,gold_100deg,transparent_120deg,gold_140deg,transparent_160deg,gold_180deg,transparent_200deg,gold_220deg,transparent_240deg,gold_260deg,transparent_280deg,gold_300deg,transparent_320deg,gold_340deg,transparent_360deg)] animate-[spin_4s_linear_infinite]" />
+            </div>
+
+            <h1 className="text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 to-yellow-700 drop-shadow-[0_0_20px_rgba(234,179,8,0.8)] tracking-tighter mb-8 scale-150 animate-pulse">
+                EVOLUTION!
+            </h1>
+            
+            <div className="relative animate-bounce">
+                <div className="w-48 h-48 bg-gradient-to-br from-yellow-700 to-black rounded-xl border-4 border-yellow-500 shadow-[0_0_50px_rgba(234,179,8,0.5)] flex items-center justify-center transform rotate-3">
+                     <span className="text-8xl filter drop-shadow-lg">{evolvedItem.icon}</span>
+                </div>
+                <div className="absolute inset-0 border-4 border-white opacity-50 rounded-xl animate-ping"></div>
+            </div>
+
+            <div className="mt-8 text-center z-10">
+                <h2 className="text-3xl font-bold text-white mb-2">{evolvedItem.name}</h2>
+                <p className="text-yellow-200 text-lg max-w-md">{evolvedItem.description}</p>
+            </div>
+        </div>
+      )}
+
       {/* Level Up Modal */}
-      {showLevelUp && (
+      {showLevelUp && !evolvedItem && (
         <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-50 animate-in fade-in zoom-in duration-200 p-4 pointer-events-auto">
           <div className="bg-[#1a1a2e] border-2 border-[#ffd700] p-1 rounded-lg max-w-lg w-full shadow-[0_0_50px_rgba(234,179,8,0.2)]">
             <div className="border border-[#ffd700] p-4 rounded h-full flex flex-col">
@@ -477,7 +549,7 @@ export default function App() {
                     className="flex items-center p-3 bg-[#16213e] hover:bg-[#0f3460] border border-[#0f3460] hover:border-[#ffd700] transition-all rounded group relative overflow-hidden"
                     >
                     <div className="w-14 h-14 rounded bg-[#1a1a2e] flex items-center justify-center mr-4 border border-[#0f3460] group-hover:border-[#ffd700] shrink-0">
-                        <div className="w-10 h-10 rounded-sm shadow-inner" style={{ backgroundColor: 'damage' in item ? (item as WeaponDef).color : '#10b981' }}></div>
+                        <div className="text-3xl">{'damage' in item ? (item as any).icon : (item as any).id === 'COIN_BAG' ? '💰' : '✨'}</div>
                     </div>
                     <div className="flex-1 text-left z-10">
                         <div className="flex justify-between items-baseline mb-1">
