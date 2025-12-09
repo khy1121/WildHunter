@@ -1,0 +1,5 @@
+{
+  "name": "Copy of Web Survivors",
+  "description": "A high-performance, mobile-optimized roguelike horde survivor game using HTML5 Canvas and React. Features object pooling, auto-battler mechanics, and weapon evolutions.",
+  "requestFramePermissions": []
+}
