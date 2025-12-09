@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { GameEngine } from './game/GameLoop';
 import { CANVAS_WIDTH, CANVAS_HEIGHT, CHARACTERS, SHOP_UPGRADES, MAPS, EVOLUTION_WEAPON_IDS, WEAPONS } from './constants';
-import { CharacterType, GameState, WeaponDef, PassiveDef, UserSaveData, UpgradeId, MapId } from './types';
+import { CharacterType, GameState, WeaponDef, PassiveDef, UserSaveData, UpgradeId, MapId, WeaponId } from './types';
 
 // Screens
 enum Screen {
@@ -440,7 +440,7 @@ export default function App() {
       {/* Weapon Slots */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 pointer-events-none opacity-80">
           {gameState && Object.entries(gameState.weapons).map(([id, lvl]) => {
-              const def = WEAPONS[id as any] || {};
+              const def = WEAPONS[id as WeaponId] || {};
               return (
                   <div key={id} className="w-8 h-8 bg-zinc-900 border border-zinc-600 flex items-center justify-center relative">
                       <div className="text-lg leading-none">{def.icon || '⚔️'}</div>
