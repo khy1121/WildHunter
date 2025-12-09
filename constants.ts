@@ -68,7 +68,7 @@ export const MAPS: Record<MapId, MapDef> = {
       backgroundB: '#4a3b4a', // Lighter
       detail: '#fbbf24',      // Gold accents
     }
-  }
+  },
 };
 
 // Augmented WeaponDef to include visual hints
