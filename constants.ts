@@ -264,6 +264,3 @@ export const PASSIVES: Record<PassiveId, PassiveDef> = {
   [PassiveId.SPELLBINDER]: { id: PassiveId.SPELLBINDER, name: '주문속박기', description: '무기 지속시간이 10% 증가합니다.', statModifier: {} },
   [PassiveId.HOLLOW_HEART]: { id: PassiveId.HOLLOW_HEART, name: '검은 심장', description: '최대 체력이 20% 증가합니다.', statModifier: { maxHp: 20 } },
 };
-
-export const ENEMIES: EnemyDef[] = [
-  { id: 'BAT', name: '박
